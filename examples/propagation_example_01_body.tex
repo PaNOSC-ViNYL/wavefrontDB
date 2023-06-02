@@ -1,0 +1,360 @@
+   
+
+In this section, we will demonstrate how to propagate a simple Gaussian
+wavefront between two planes through vacuum. This is the simplest case
+of coherent wavefront propagation.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{7}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Import all SimEx modules}
+\PY{k+kn}{from} \PY{n+nn}{SimEx}\PY{n+nn}{.}\PY{n+nn}{Calculators}\PY{n+nn}{.}\PY{n+nn}{WavePropagator} \PY{k+kn}{import} \PY{n}{WavePropagator}
+\PY{k+kn}{from} \PY{n+nn}{SimEx}\PY{n+nn}{.}\PY{n+nn}{Calculators}\PY{n+nn}{.}\PY{n+nn}{GaussianPhotonSource} \PY{k+kn}{import} \PY{n}{GaussianPhotonSource}
+\PY{k+kn}{from} \PY{n+nn}{SimEx}\PY{n+nn}{.}\PY{n+nn}{Parameters}\PY{n+nn}{.}\PY{n+nn}{WavePropagatorParameters} \PY{k+kn}{import} \PY{n}{WavePropagatorParameters}
+\PY{k+kn}{from} \PY{n+nn}{SimEx}\PY{n+nn}{.}\PY{n+nn}{Parameters}\PY{n+nn}{.}\PY{n+nn}{GaussWavefrontParameters} \PY{k+kn}{import} \PY{n}{GaussWavefrontParameters}
+
+\PY{k+kn}{from} \PY{n+nn}{SimEx}\PY{n+nn}{.}\PY{n+nn}{Utilities}\PY{n+nn}{.}\PY{n+nn}{Units} \PY{k+kn}{import} \PY{n}{electronvolt}\PY{p}{,} \PY{n}{meter}\PY{p}{,} \PY{n}{joule}\PY{p}{,} \PY{n}{radian}
+\PY{k+kn}{import} \PY{n+nn}{numpy}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{setup-the-initial-wavefront}{%
+\subsubsection{Setup the initial
+wavefront}\label{setup-the-initial-wavefront}}
+
+We first create a wavefront with a Gaussian intensity distribution. To
+this end, we use the \texttt{GaussianPhotonSource} Calculator and it's
+corresponding parameter, the \texttt{GaussWavefrontParameters}.
+
+    We first describe the wavefront parameters which will then be used to
+create the wavefront itself:
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{8}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wavefront\PYZus{}parameters} \PY{o}{=} \PY{n}{GaussWavefrontParameters}\PY{p}{(}\PY{n}{photon\PYZus{}energy}\PY{o}{=}\PY{l+m+mf}{8.0e3}\PY{o}{*}\PY{n}{electronvolt}\PY{p}{,}
+                                                \PY{n}{photon\PYZus{}energy\PYZus{}relative\PYZus{}bandwidth}\PY{o}{=}\PY{l+m+mf}{1e\PYZhy{}3}\PY{p}{,}
+                                                \PY{n}{beam\PYZus{}diameter\PYZus{}fwhm}\PY{o}{=}\PY{l+m+mf}{1.0e\PYZhy{}4}\PY{o}{*}\PY{n}{meter}\PY{p}{,}
+                                                \PY{n}{pulse\PYZus{}energy}\PY{o}{=}\PY{l+m+mf}{2.0e\PYZhy{}6}\PY{o}{*}\PY{n}{joule}\PY{p}{,}
+                                                \PY{n}{number\PYZus{}of\PYZus{}transverse\PYZus{}grid\PYZus{}points}\PY{o}{=}\PY{l+m+mi}{400}\PY{p}{,}
+                                                \PY{n}{number\PYZus{}of\PYZus{}time\PYZus{}slices}\PY{o}{=}\PY{l+m+mi}{12}\PY{p}{,}
+                                                \PY{n}{z}\PY{o}{=}\PY{l+m+mi}{100}\PY{o}{*}\PY{n}{meter}\PY{p}{,}
+                                                \PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    The parameters of the wavefront constructor are self explaining. Note
+that \(z\), the longitudinal wavefront coordinate is set to \(100\) m,
+i.e.~far enough away from the source position to justify a far-field
+treatment.
+
+    Now, we use these\texttt{wavefront\_parameters} to initialize the Photon
+Source.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{25}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{photon\PYZus{}source} \PY{o}{=} \PY{n}{GaussianPhotonSource}\PY{p}{(}\PY{n}{wavefront\PYZus{}parameters}\PY{p}{,} \PY{n}{input\PYZus{}path}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{/dev/null}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{output\PYZus{}path}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{initial\PYZus{}wavefront.h5}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Let's calculate the initial wavefront and visualize it. Running the
+\texttt{backengine} method of \texttt{photon\_source}, initializes the
+data fields and returns the Rayleigh length.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{photon\PYZus{}source}\PY{o}{.}\PY{n}{backengine}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+146.22875114783653
+    \end{Verbatim}
+
+    We can retrieve the wavefront data from the calculator:
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{27}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wavefront} \PY{o}{=} \PY{n}{photon\PYZus{}source}\PY{o}{.}\PY{n}{data}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Let's visualize the wavefront using the WPG utilities.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{28}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{from} \PY{n+nn}{wpg} \PY{k+kn}{import} \PY{n}{wpg\PYZus{}uti\PYZus{}wf} \PY{k}{as} \PY{n}{wpg\PYZus{}utils}
+\end{Verbatim}
+\end{tcolorbox}
+
+    First plot the intensity distribution
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{56}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wpg\PYZus{}utils}\PY{o}{.}\PY{n}{plot\PYZus{}intensity\PYZus{}map}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+R-space
+(400,) (400,)
+FWHM in x = 1.147e-04 m.
+FWHM in y = 1.147e-04 m.
+    \end{Verbatim}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{propagation_example_01_files/propagation_example_01_15_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \hypertarget{plot-intensity-distribution-in-q-space}{%
+\subsection{Plot intensity distribution in
+q-space}\label{plot-intensity-distribution-in-q-space}}
+
+Then, plot the intensity profile in reciprocal (\(q\)-)space.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{12}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wpg\PYZus{}utils}\PY{o}{.}\PY{n}{plot\PYZus{}intensity\PYZus{}qmap}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+Q-space
+\{'fwhm\_x': 6.657123479604694e-07, 'fwhm\_y': 6.657123479604694e-07\}
+Q-space
+(400,) (400,)
+    \end{Verbatim}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{propagation_example_01_files/propagation_example_01_17_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    Next, plot the power as a function of time integrated over the
+transverse dimensions.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wpg\PYZus{}utils}\PY{o}{.}\PY{n}{integral\PYZus{}intensity}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{propagation_example_01_files/propagation_example_01_19_0.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{propagation_example_01_files/propagation_example_01_19_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+number of meaningful slices: 7
+Pulse energy 2e-06 J
+    \end{Verbatim}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{13}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+1059337216.0
+\end{Verbatim}
+\end{tcolorbox}
+        
+    Finally, we check the sampling quality.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{15}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n+nb}{print}\PY{p}{(}\PY{n}{wpg\PYZus{}utils}\PY{o}{.}\PY{n}{check\PYZus{}sampling}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+WAVEFRONT SAMPLING REPORT
++----------+---------+---------+---------+---------+---------+---------+--------
+-+
+|x/y       |FWHM     |px       |ROI      |R        |Fzone    |px*7     |px*10
+|
++----------+---------+---------+---------+---------+---------+---------+--------
+-+
+|Horizontal|1.147e-04|6.386e-06|2.548e-03|1.772e+02|1.196e-04|4.470e-05|6.386e-0
+5|
+|Vertical
+|1.147e-04|6.386e-06|2.548e-03|1.772e+02|1.196e-04|4.470e-05|6.386e-05|
++----------+---------+---------+---------+---------+---------+---------+--------
+-+
+
+Horizontal Fresnel zone extension NOT within [7,10]*pixel\_width -> Check pixel
+width."
+Vertical Fresnel zone extension NOT within [7,10]*pixel\_height -> Check pixel
+width."
+Horizontal ROI > 3* FWHM(x) -> OK
+Horizontal ROI > 3* FWHM(y) -> OK
+Focus sampling: FWHM > 10*px
+
+END OF REPORT
+    \end{Verbatim}
+
+    The wavefront quality report is somewhat suboptimal because the Fresnel
+zone extension is below the recommended minimimum of 7 times the
+sampling (pixel) size. We will proceed anyway and check after
+propagation if this is a problem.
+
+Our next step is to propagate the wavefront through 100 m of empty
+space. Let's estimate the beam size using the beam waist formula.
+
+    The beam waist size (rms width of the E-field distribution, or distance
+from beam axis where intensity drops to \(1/e^2\) of its on-axis value)
+is given by the expression
+
+\(w(z) = w\_0 \sqrt{1 + \left(\frac{z}{R}\right)^2}\), with the
+Rayleigh length \(R = \frac{\pi w_0^2}{\lambda}\), \(\lambda\) is the
+central wavelength of the laser (ca,. 0.15 nm at 8 keV.)
+
+Our Gaussian source distribution has a FWHM of \(10^{-4} m\). The FWHM
+and the beam waist radius as defined above are related to each other
+through \(\mathrm{FWHM}(z) = \sqrt{2 \ln 2} w(z) \simeq 1.177 w(z)\)
+
+Beam waist at z=0:
+\(w_0 = 100\,\mathrm{\mu m} / 1.177 \simeq 84.9\,\mathrm{\mu m}\).\\
+The Rayleigh length for our Gaussian beam is
+\(R = \frac{\pi w_0^2}{0.15 \mathrm{nm}} \simeq 151\,\mathrm{m}\).
+
+At \(z=100\,\mathrm{m}\), we therefore expect a FWHM of
+\(100\,\mu\mathrm{m}\cdot\sqrt{1.+\left(100/151\right)^2} \simeq 119.9 \mu\mathrm{m}\).
+
+    \hypertarget{setup-the-beamline}{%
+\subsection{Setup the beamline}\label{setup-the-beamline}}
+
+We are now ready to specify the beamline. Import the corresponding
+classes,
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{30}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{from} \PY{n+nn}{wpg} \PY{k+kn}{import} \PY{n}{Beamline}\PY{p}{,} \PY{n}{optical\PYZus{}elements}\PY{p}{,} \PY{n}{srwlib}
+\end{Verbatim}
+\end{tcolorbox}
+
+    And initialize
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{33}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{beamline} \PY{o}{=} \PY{n}{Beamline}\PY{p}{(}\PY{p}{)}
+\PY{n}{free\PYZus{}space} \PY{o}{=} \PY{n}{optical\PYZus{}elements}\PY{o}{.}\PY{n}{Drift}\PY{p}{(}\PY{n}{\PYZus{}L}\PY{o}{=}\PY{l+m+mi}{99}\PY{p}{,} \PY{n}{\PYZus{}treat}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{free\PYZus{}space\PYZus{}propagation\PYZus{}parameters} \PY{o}{=} \PY{n}{optical\PYZus{}elements}\PY{o}{.}\PY{n}{Use\PYZus{}PP}\PY{p}{(}\PY{n}{semi\PYZus{}analytical\PYZus{}treatment}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    Finaly, assemble the beamline
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{34}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{beamline}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{free\PYZus{}space}\PY{p}{,} \PY{n}{free\PYZus{}space\PYZus{}propagation\PYZus{}parameters}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    To start the propagation, we transform the wavefront to frequency space,
+run the beamline's \texttt{.propagate()} method and backtransform to
+temporal representation.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{srwlib}\PY{o}{.}\PY{n}{srwl}\PY{o}{.}\PY{n}{SetRepresElecField}\PY{p}{(}\PY{n}{wavefront}\PY{o}{.}\PY{n}{\PYZus{}srwl\PYZus{}wf}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{f}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{beamline}\PY{o}{.}\PY{n}{propagate}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}
+\PY{n}{srwlib}\PY{o}{.}\PY{n}{srwl}\PY{o}{.}\PY{n}{SetRepresElecField}\PY{p}{(}\PY{n}{wavefront}\PY{o}{.}\PY{n}{\PYZus{}srwl\PYZus{}wf}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{t}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+            \begin{tcolorbox}[breakable, size=fbox, boxrule=.5pt, pad at break*=1mm, opacityfill=0]
+\prompt{Out}{outcolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+<wpg.srw.srwlib.SRWLWfr at 0x2af03f55c4d0>
+\end{Verbatim}
+\end{tcolorbox}
+        
+    The wavefront has now been propagated through the beamline. As above, we
+can visualize the intensity profiles in various projections and Fourier
+components:
+
+    \hypertarget{real-space-transverse-intensity-profile}{%
+\subsubsection{Real space transverse intensity
+profile:}\label{real-space-transverse-intensity-profile}}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{21}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{wpg\PYZus{}utils}\PY{o}{.}\PY{n}{plot\PYZus{}intensity\PYZus{}map}\PY{p}{(}\PY{n}{wavefront}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+R-space
+(400,) (400,)
+FWHM in x = 1.282e-04 m.
+FWHM in y = 1.282e-04 m.
+    \end{Verbatim}
+
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{propagation_example_01_files/propagation_example_01_34_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+    The propagated wavefront has a
+\(\mathrm{FWHM} = 128.2\,\mathrm{\mu m}\). Considering that the FWHM is
+measured by counting pixels in the intensity profile, this is in rather
+good agreement with the analytical calculation above which yielded
+\(119\,\mathrm{\mu m}\).
+
+    \hypertarget{exercises-calculate-the-fwhm-of-the-central-diffraction-peak-and-the-position-of-the-first-diffraction-side-maximum.-compare-your-results-with-the-simulated-experiment.}{%
+\subsection{Exercises: Calculate the FWHM of the central diffraction
+peak and the position of the first diffraction side maximum. Compare
+your results with the simulated
+experiment.}\label{exercises-calculate-the-fwhm-of-the-central-diffraction-peak-and-the-position-of-the-first-diffraction-side-maximum.-compare-your-results-with-the-simulated-experiment.}}
+
+\hypertarget{pinhole-of-size-50-mum.}{%
+\subsubsection{\texorpdfstring{Pinhole of size 50
+\(\mu\)m.}{Pinhole of size 50 \textbackslash mum.}}\label{pinhole-of-size-50-mum.}}
+
+\hypertarget{pinhole-of-size-10-mum.}{%
+\subsubsection{\texorpdfstring{Pinhole of size 10
+\(\mu\)m.}{Pinhole of size 10 \textbackslash mum.}}\label{pinhole-of-size-10-mum.}}
+
+\hypertarget{circular-disk-of-50-mum.}{%
+\subsubsection{\texorpdfstring{Circular disk of 50
+\(\mu\)m.}{Circular disk of 50 \textbackslash mum.}}\label{circular-disk-of-50-mum.}}
+
+\hypertarget{circular-disk-of-10-mum.}{%
+\subsubsection{\texorpdfstring{Circular disk of 10
+\(\mu\)m.}{Circular disk of 10 \textbackslash mum.}}\label{circular-disk-of-10-mum.}}
+
+\hypertarget{confirm-babinets-principle.-calculate-the-ratio-of-integrated-intensities-between-diffraction-from-an-aperture-and-from-the-circular-disk.}{%
+\subsubsection{Confirm Babinet's principle. Calculate the ratio of
+integrated intensities between diffraction from an aperture and from the
+circular
+disk.}\label{confirm-babinets-principle.-calculate-the-ratio-of-integrated-intensities-between-diffraction-from-an-aperture-and-from-the-circular-disk.}}
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{ }{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+
+\end{Verbatim}
+\end{tcolorbox}
+
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
